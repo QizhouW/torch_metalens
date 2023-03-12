@@ -11,12 +11,9 @@ class BaseDataLoader(DataLoader):
     def __init__(self, dataset, batch_size, shuffle, validation_split, num_workers, collate_fn=default_collate):
         self.validation_split = validation_split
         self.shuffle = shuffle
-
         self.batch_idx = 0
         self.n_samples = len(dataset)
-
         self.sampler, self.valid_sampler = self._split_sampler(self.validation_split)
-
         self.init_kwargs = {
             'dataset': dataset,
             'batch_size': batch_size,
@@ -31,7 +28,6 @@ class BaseDataLoader(DataLoader):
             return None, None
 
         idx_full = np.arange(self.n_samples)
-
         np.random.seed(0)
         np.random.shuffle(idx_full)
 
@@ -51,7 +47,6 @@ class BaseDataLoader(DataLoader):
         # turn off shuffle option which is mutually exclusive with sampler
         self.shuffle = False
         self.n_samples = len(train_idx)
-
         return train_sampler, valid_sampler
 
     def split_validation(self):

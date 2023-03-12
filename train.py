@@ -8,8 +8,8 @@ import model.metric as module_metric
 import model.model as module_arch
 from parse_config import ConfigParser
 from trainer import Trainer
-from utils import prepare_device
-
+from torch_utils import prepare_device
+from torchsummary import summary
 
 # fix random seeds for reproducibility
 SEED = 123
@@ -43,7 +43,7 @@ def main(config):
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = config.init_obj('optimizer', torch.optim, trainable_params)
     lr_scheduler = config.init_obj('lr_scheduler', torch.optim.lr_scheduler, optimizer)
-
+    summary(model, (1, 50, 50), batch_size=-1, device='cpu')
     trainer = Trainer(model, criterion, metrics, optimizer,
                       config=config,
                       device=device,
@@ -55,19 +55,22 @@ def main(config):
 
 
 if __name__ == '__main__':
+    torch.autograd.set_detect_anomaly(True)
     args = argparse.ArgumentParser(description='PyTorch Template')
-    args.add_argument('-c', '--config', default=None, type=str,
+    args.add_argument('-c', '--config', default='config.json', type=str,
                       help='config file path (default: None)')
     args.add_argument('-r', '--resume', default=None, type=str,
                       help='path to latest checkpoint (default: None)')
-    args.add_argument('-d', '--device', default=None, type=str,
+    args.add_argument('-d', '--device', default='all', type=str,
                       help='indices of GPUs to enable (default: all)')
 
     # custom cli options to modify configuration from default values given in json file.
     CustomArgs = collections.namedtuple('CustomArgs', 'flags type target')
     options = [
         CustomArgs(['--lr', '--learning_rate'], type=float, target='optimizer;args;lr'),
-        CustomArgs(['--bs', '--batch_size'], type=int, target='data_loader;args;batch_size')
+        CustomArgs(['--bs', '--batch_size'], type=int, target='data_loader;args;batch_size'),
+        CustomArgs(['--status'], type=str, target='data_loader;args;train_test'),
+        CustomArgs(['--t', '--thickness'], type=int, target='data_loader;args;thickenss'),
     ]
     config = ConfigParser.from_args(args, options)
     main(config)

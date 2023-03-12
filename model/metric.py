@@ -1,4 +1,8 @@
 import torch
+import torch.nn.functional as F
+
+def mae(output, target):
+    return F.l1_loss(output, target).float()
 
 
 def accuracy(output, target):
