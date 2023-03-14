@@ -82,4 +82,4 @@ if __name__ == '__main__':
         for t in [0.1, 0.15, 0.2, 0.25]:
             for p in ['Ex', 'Ey']:
                 config = ConfigParser.from_args(args, '', p, d, t)
-                main(config)
+                #main(config)

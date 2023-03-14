@@ -55,8 +55,8 @@ class MyDataSet(Dataset):
         if datatype == 'phase':
             Y = np.load(os.path.join(data_dir, 'phase.npy'))
             Y = Y[data_idx]
-            Y_Ex = [unwrap_phase(d[0]) / taget_normalize for d in Y]
-            Y_Ey = [unwrap_phase(d[1]) / taget_normalize for d in Y]
+            Y_Ex = [d[0] / taget_normalize for d in Y]
+            Y_Ey = [d[1] / taget_normalize for d in Y]
         elif datatype == 'amplitude':
             Y = np.load(os.path.join(data_dir, 'amp.npy'))
             Y = Y[data_idx]
