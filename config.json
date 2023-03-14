@@ -1,11 +1,11 @@
 {
-    "name": "metalens",
+    "name": "metalens_small_net",
     "n_gpu": 1,
     "arch": {
-        "type": "ResSigRegression",
+        "type": "ResSmallRegression",
         "args": {
-            "input_shape": 50,
-            "output_shape":20,
+            "unit_size": 50,
+            "out_pts":20,
             "last_activate": "sigmoid"
         }
     },
@@ -14,14 +14,14 @@
         "args":{
             "data_dir": "../dataset/50/",
             "csv_file": "data.csv",
-            "thickness": 0.10,
+            "thickness": 0.15,
             "polarization": "Ex",
             "unit_size":50,
             "rotate_augmentation":true,
             "overlap":true,
             "datatype":"amplitude",
             "train_test":"train",
-            "shift_range":20,
+            "shift_range":0,
             "taget_normalize":6.2832,
             "batch_size": 64,
             "shuffle": true,
@@ -50,9 +50,9 @@
         }
     },
     "trainer": {
-        "epochs": 100,
+        "epochs": 120,
         "save_dir": "res/",
-        "save_period": 1,
+        "save_period": 5,
         "verbosity": 2,
         "monitor": "min val_loss",
         "early_stop": 10,

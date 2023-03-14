@@ -18,18 +18,22 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 np.random.seed(SEED)
 
+
 def main(config):
     logger = config.get_logger('train')
 
     # setup data_loader instances
     data_loader = config.init_obj('data_loader', module_data)
+    print(
+        f"Train on {data_loader.dataset.thickness} um "
+        f"{data_loader.dataset.datatype} data at "
+        f"{data_loader.dataset.polarization} ")
     valid_data_loader = data_loader.split_validation()
-
     # build model architecture, then print to console
     model = config.init_obj('arch', module_arch)
     logger.info(model)
-
-    # prepare for (multi-device) GPU training
+    #summary(model, (1, 50, 50), batch_size=-1, device='cuda')
+    #prepare for (multi-device) GPU training
     device, device_ids = prepare_device(config['n_gpu'])
     model = model.to(device)
     if len(device_ids) > 1:
@@ -43,7 +47,6 @@ def main(config):
     trainable_params = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = config.init_obj('optimizer', torch.optim, trainable_params)
     lr_scheduler = config.init_obj('lr_scheduler', torch.optim.lr_scheduler, optimizer)
-    summary(model, (1, 50, 50), batch_size=-1, device='cpu')
     trainer = Trainer(model, criterion, metrics, optimizer,
                       config=config,
                       device=device,
@@ -55,6 +58,7 @@ def main(config):
 
 
 if __name__ == '__main__':
+    print('available gpu number=',torch.cuda.device_count())
     torch.autograd.set_detect_anomaly(True)
     args = argparse.ArgumentParser(description='PyTorch Template')
     args.add_argument('-c', '--config', default='config.json', type=str,
@@ -69,8 +73,13 @@ if __name__ == '__main__':
     options = [
         CustomArgs(['--lr', '--learning_rate'], type=float, target='optimizer;args;lr'),
         CustomArgs(['--bs', '--batch_size'], type=int, target='data_loader;args;batch_size'),
-        CustomArgs(['--status'], type=str, target='data_loader;args;train_test'),
-        CustomArgs(['--t', '--thickness'], type=int, target='data_loader;args;thickenss'),
+        # CustomArgs(['--p'], type=str, target='data_loader;args;polarization'),
+        # CustomArgs(['--t', '--thickness'], type=int, target='data_loader;args;thickenss'),
+        # CustomArgs(['--dt', '--datatype'], type=int, target='data_loader;args;datatype')
     ]
-    config = ConfigParser.from_args(args, options)
-    main(config)
+
+    for d in ['amplitude', 'phase']:
+        for t in [0.1, 0.15, 0.2, 0.25]:
+            for p in ['Ex', 'Ey']:
+                config = ConfigParser.from_args(args, '', p, d, t)
+                main(config)

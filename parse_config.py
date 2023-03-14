@@ -5,7 +5,7 @@ from functools import reduce, partial
 from operator import getitem
 from datetime import datetime
 from logger import setup_logging
-from torch_utils import read_json, write_json
+from torch_utils import read_json, write_json,mkdir
 
 
 class ConfigParser:
@@ -26,15 +26,20 @@ class ConfigParser:
         save_dir = Path(self.config['trainer']['save_dir'])
 
         exper_name = self.config['name']
-        if run_id is None: # use timestamp as default run-id
+        if run_id is None:  # use timestamp as default run-id
             run_id = datetime.now().strftime(r'%m%d_%H%M%S')
-        self._save_dir = save_dir / 'models' / exper_name / run_id
-        self._log_dir = save_dir / 'log' / exper_name / run_id
+
+        self._save_dir = save_dir / exper_name / run_id / 'model'
+        self._log_dir = save_dir / exper_name / run_id / 'log'
 
         # make directory for saving checkpoints and log.
-        exist_ok = run_id == ''
-        self.save_dir.mkdir(parents=True, exist_ok=exist_ok)
-        self.log_dir.mkdir(parents=True, exist_ok=exist_ok)
+        #exist_ok = run_id == ''
+        #self.save_dir.mkdir(parents=True, exist_ok=exist_ok)
+        #self.log_dir.mkdir(parents=True, exist_ok=exist_ok)
+
+        ## Alternative ways of makedir
+        mkdir(self._save_dir.__str__(),rm=True)
+        mkdir(self._log_dir.__str__(), rm=True)
 
         # save updated config file to the checkpoint dir
         write_json(self.config, self.save_dir / 'config.json')
@@ -48,7 +53,7 @@ class ConfigParser:
         }
 
     @classmethod
-    def from_args(cls, args, options=''):
+    def from_args(cls, args, options,polarizaiton,datatype,thickness):
         """
         Initialize this class from some cli arguments. Used in train, test.
         """
@@ -67,15 +72,19 @@ class ConfigParser:
             assert args.config is not None, msg_no_cfg
             resume = None
             cfg_fname = Path(args.config)
-        
+
         config = read_json(cfg_fname)
         if args.config and resume:
             # update new config for fine-tuning
             config.update(read_json(args.config))
 
+        config['data_loader']['args']['polarization']=polarizaiton
+        config['data_loader']['args']['thickness'] = thickness
+        config['data_loader']['args']['datatype'] = datatype
         # parse custom cli options into dictionary
-        modification = {opt.target : getattr(args, _get_opt_name(opt.flags)) for opt in options}
-        return cls(config, resume, modification)
+        modification = {opt.target: getattr(args, _get_opt_name(opt.flags)) for opt in options}
+        
+        return cls(config, resume, modification,run_id='_'.join([datatype,str(int(thickness*1000)),polarizaiton]))
 
     def init_obj(self, name, module, *args, **kwargs):
         """
@@ -112,7 +121,8 @@ class ConfigParser:
         return self.config[name]
 
     def get_logger(self, name, verbosity=2):
-        msg_verbosity = 'verbosity option {} is invalid. Valid options are {}.'.format(verbosity, self.log_levels.keys())
+        msg_verbosity = 'verbosity option {} is invalid. Valid options are {}.'.format(verbosity,
+                                                                                       self.log_levels.keys())
         assert verbosity in self.log_levels, msg_verbosity
         logger = logging.getLogger(name)
         logger.setLevel(self.log_levels[verbosity])
@@ -131,6 +141,7 @@ class ConfigParser:
     def log_dir(self):
         return self._log_dir
 
+
 # helper functions to update config dict with custom cli options
 def _update_config(config, modification):
     if modification is None:
@@ -141,16 +152,19 @@ def _update_config(config, modification):
             _set_by_path(config, k, v)
     return config
 
+
 def _get_opt_name(flags):
     for flg in flags:
         if flg.startswith('--'):
             return flg.replace('--', '')
     return flags[0].replace('--', '')
 
+
 def _set_by_path(tree, keys, value):
     """Set a value in a nested object in tree by sequence of keys."""
     keys = keys.split(';')
     _get_by_path(tree, keys[:-1])[keys[-1]] = value
+
 
 def _get_by_path(tree, keys):
     """Access a nested object in tree by sequence of keys."""

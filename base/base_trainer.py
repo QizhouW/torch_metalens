@@ -2,12 +2,14 @@ import torch
 from abc import abstractmethod
 from numpy import inf
 from logger import TensorboardWriter
+import os
 
 
 class BaseTrainer:
     """
     Base class for all trainers
     """
+
     def __init__(self, model, criterion, metric_ftns, optimizer, config):
         self.config = config
         self.logger = config.get_logger('trainer', config['trainer']['verbosity'])
@@ -69,6 +71,16 @@ class BaseTrainer:
             # print logged informations to the screen
             for key, value in log.items():
                 self.logger.info('    {:15s}: {}'.format(str(key), value))
+
+            # log loss in csv
+            csv_filename = os.path.join(self.config._log_dir, 'loss.csv')
+            if os.path.exists(csv_filename):
+                with open(csv_filename, 'a') as csv:
+                    csv.write(','.join([str(v) for k, v in log.items()])+'\n')
+            else:
+                with open(csv_filename, 'w') as csv:
+                    csv.write(','.join([k for k, v in log.items()])+'\n')
+                    csv.write(','.join([str(v) for k, v in log.items()])+'\n')
 
             # evaluate model performance according to configured metric, save best checkpoint as model_best
             best = False

@@ -4,7 +4,19 @@ import pandas as pd
 from pathlib import Path
 from itertools import repeat
 from collections import OrderedDict
+import os
+import shutil
 
+def mkdir(path,rm=False):
+    if not os.path.exists(path):
+        os.makedirs(path)
+    else:
+        if rm:
+            print(f'save folder {path} exists, purging')
+            shutil.rmtree(path)
+            os.mkdir(path)
+        else:
+            print(f'folder {path}  exists')
 
 def ensure_dir(dirname):
     dirname = Path(dirname)
@@ -35,6 +47,7 @@ def prepare_device(n_gpu_use):
         print("Warning: There\'s no GPU available on this machine,"
               "training will be performed on CPU.")
         n_gpu_use = 0
+        raise ValueError('GPU id not detected, aborting')
     if n_gpu_use > n_gpu:
         print(f"Warning: The number of GPU\'s configured to use is {n_gpu_use}, but only {n_gpu} are "
               "available on this machine.")

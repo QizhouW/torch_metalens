@@ -39,6 +39,7 @@ class MyDataSet(Dataset):
         self.thickness = thickness
         self.polarization = polarization
         self.shift_range=shift_range
+        self.datatype=datatype
         self.data_list = pd.read_csv(os.path.join(data_dir, csv_file), index_col=0)
         assert self.dim == np.unique(self.data_list.nx), 'The input unit size is wrong'
         X = np.load(os.path.join(data_dir, 'geo.npy'))
